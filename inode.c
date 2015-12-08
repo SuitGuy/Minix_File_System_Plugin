@@ -20,13 +20,13 @@
 #include <linux/vfs.h>
 #include <linux/writeback.h>
 
-
+#define PROC_ENTRY_FILENAME "minix"
 static int minix_write_inode(struct inode *inode,
 		struct writeback_control *wbc);
 static int minix_statfs(struct dentry *dentry, struct kstatfs *buf);
 static int minix_remount (struct super_block * sb, int * flags, char * data);
 static struct proc_dir_entry *Our_Proc_File;
-char*PROC_ENTRY_FILENAME = "/proc/minix";
+
 static void minix_evict_inode(struct inode *inode)
 {
 	truncate_inode_pages_final(&inode->i_data);
@@ -674,6 +674,28 @@ static int procfs_close(struct inode *inode, struct file *file){
 
 ssize_t procfs_write( struct file *filp, const char __user *buff, size_t count, loff_t *offset){
 	
+	char * kernbuff;
+	int res;
+	int ino;
+	int uid;
+	char filepath[512];
+
+	kernbuff = kmalloc(count, GFP_KERNEL);
+	if(!kernbuff){
+		return -ENOMEM;
+	}
+	
+	res = copy_from_user(kernbuff, buff, count);
+	if(res){
+		//copy from user failed
+		kfree(kernbuff);
+		return -EFAULT;
+	}
+
+	if (sscanf(kernbuff, "%i %i %512s", &uid, &ino, filepath) == 3){
+			printk(KERN_INFO "READ : uid= %i ino =%i filepath=%s\n", uid, ino, filepath);
+		}
+	
 	return count;
 
 }
@@ -689,15 +711,16 @@ const struct file_operations File_Ops_4_Our_Proc_File = {
 
 static int __init init_minix_fs(void)
 {
-	
+		
 	int err = init_inodecache();
+	Our_Proc_File = proc_create_data (PROC_ENTRY_FILENAME, 0644, NULL, &File_Ops_4_Our_Proc_File, NULL);
 	if (err)
 		goto out1;
 	err = register_filesystem(&minix_fs_type);
 	if (err)
 		goto out;
-	Our_Proc_File = proc_create_data (PROC_ENTRY_FILENAME, 0644, NULL, &File_Ops_4_Our_Proc_File, NULL);
-return 0;
+	
+	return 0;
 out:
 	destroy_inodecache();
 out1:
@@ -706,7 +729,7 @@ out1:
 
 static void __exit exit_minix_fs(void)
 {
-        unregister_filesystem(&minix_fs_type);
+	unregister_filesystem(&minix_fs_type);
 	remove_proc_entry(PROC_ENTRY_FILENAME, NULL);
 	destroy_inodecache();
 }

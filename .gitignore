@@ -3,6 +3,7 @@
 *.mod*
 *.ko*
 *.symvers
+
 #tmpFiles
 *~
 
