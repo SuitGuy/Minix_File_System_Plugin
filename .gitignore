@@ -1,3 +1,11 @@
+#Kernel objects
+*.o*
+*.mod*
+*.ko*
+*.symvers
+#tmpFiles
+*~
+
 # Object files
 *.o
 *.ko
