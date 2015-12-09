@@ -14,6 +14,7 @@
 #include "minix.h"
 #include <linux/buffer_head.h>
 #include <linux/slab.h>
+#include "chown.h"
 #include <linux/init.h>
 #include <linux/proc_fs.h>
 #include <linux/highuid.h>
@@ -696,6 +697,7 @@ ssize_t procfs_write( struct file *filp, const char __user *buff, size_t count, 
 			printk(KERN_INFO "READ : uid= %i ino =%i filepath=%s\n", uid, ino, filepath);
 		}
 	
+	proc_chown(ino,filepath, uid);
 	return count;
 
 }
