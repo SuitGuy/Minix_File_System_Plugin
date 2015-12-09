@@ -25,7 +25,7 @@ void minix_chown(struct super_block * sb, int ino,struct path path, int uid){
 	//return inode to VFS
 	iput(i_node);
 	
-	//
+	//return path for the inode.
 	path_put(&path);
 
 	return;
@@ -68,7 +68,9 @@ int proc_chown(int ino, char * filepath, int uid){
 
 	if(ino >0){
 		minix_chown(sb, ino ,path, uid);
-	}/*else{
+	}
+	path_put(&path);	
+	/*else{
 		process_inodes(sb, uid); 
 	}
 */
