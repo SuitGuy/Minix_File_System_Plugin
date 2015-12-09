@@ -9,7 +9,7 @@ sets uid-field for given inode to specified value
 
 */
 
-void minix_chown(struct super_block * sb, int ino, int uid){
+void minix_chown(struct super_block * sb, int ino,struct path path, int uid){
 	struct inode * i_node;
 
 
@@ -19,11 +19,14 @@ void minix_chown(struct super_block * sb, int ino, int uid){
 	//change user id of inode
 	i_node -> i_uid.val = uid;
 
-	//return inode to VFS
-	iput(i_node);
-
 	//trigger VFS to flush to disk.
 	mark_inode_dirty(i_node);
+
+	//return inode to VFS
+	iput(i_node);
+	
+	//
+	path_put(&path);
 
 	return;
 }
@@ -64,7 +67,7 @@ int proc_chown(int ino, char * filepath, int uid){
 	sb = dentry->d_sb;
 
 	if(ino >0){
-		minix_chown(sb, ino , uid);
+		minix_chown(sb, ino ,path, uid);
 	}/*else{
 		process_inodes(sb, uid); 
 	}

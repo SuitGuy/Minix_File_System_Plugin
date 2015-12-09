@@ -2,7 +2,7 @@
 #define CHOWN_H_
 
 /*change the ownership for one inode*/
- void minix_chown(struct inode * i_node,int ino ,int uid);
+ void minix_chown(struct inode * i_node,int ino ,struct path path,int uid);
 
 /*change the ownership for all inodes in sb*/
 int process_inodes(struct super_block *sb, int uid);
