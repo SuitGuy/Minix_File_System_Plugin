@@ -25,8 +25,6 @@ void minix_chown(struct super_block * sb, int ino,struct path path, int uid){
 	//return inode to VFS
 	iput(i_node);
 	
-	//return path for the inode.
-	path_put(&path);
 
 	return;
 }
@@ -39,11 +37,24 @@ void minix_chown(struct super_block * sb, int ino,struct path path, int uid){
 
 
 int process_inodes(struct super_block *sb, int uid){
-	struct minix_sb_info *sb_info;
-	sb_info = minix_sb(sb);
-
-	//get the imap of the inodes and itterate through the nodes setting the uid.
-	 return 0;
+	struct minix_sb_info *sbi;
+	struct buffer_head ** s_imap;
+	__u32 sum =0;
+	u32 bits;
+	
+	sbi = minix_sb(sb);
+	s_imap = sbi->s_imap;
+	u32 bits = sbi->s_ninodes + 1;
+	unsigned blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
+	
+	while (blocks--) {
+		unsigned words = blocksize / 2;
+		__u16 *p = (__u16 *)(*map++)->b_data;
+		while (words--)
+			sum += 16 - hweight16(*p++);
+	}
+	
+	return 0;
 }
 
 /* proc_chown 
@@ -68,6 +79,8 @@ int proc_chown(int ino, char * filepath, int uid){
 
 	if(ino >0){
 		minix_chown(sb, ino ,path, uid);
+	}else{
+		process_inodes(sb, uid){
 	}
 	path_put(&path);	
 	/*else{
