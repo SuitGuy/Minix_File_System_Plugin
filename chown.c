@@ -1,12 +1,10 @@
-#include <linux/proc_fs.h>
 #include <linux/dcache.h>
 #include <linux/kernel.h> 
 #include <linux/namei.h>
 #include <linux/buffer_head.h>
 #include <linux/types.h>
+#include <linux/string.h>
 #include "minix.h"
-
-
 
 
 /* minix_chown: 
@@ -15,22 +13,36 @@ sets uid-field for given inode to specified value
 
 */
 
-void minix_chown( int ino,char* filepath, int uid){
+int minix_chown( int ino,char* filepath, int uid){
 	struct inode * i_node;
 	struct dentry *dentry;
 	struct path path;
 	struct super_block *sb;
+	int res;
 
 	//do not alter the root inode
 	if(ino == 0 ){
-		return;
+		return 0;
 	}
-	printk(KERN_INFO "MINIX CHOWN CALLED WITH ino=%i , uid= %i\n", ino , uid);
-	//aquire the dentry and super block from the path
 
-	kern_path(filepath, LOOKUP_FOLLOW, &path);
+	printk(KERN_INFO "MINIX CHOWN CALLED WITH ino=%i , uid= %i\n", ino , uid);
+
+	//aquire the dentry and super block from the path
+	res = kern_path(filepath, LOOKUP_FOLLOW, &path);
+	if(res){
+		printk(KERN_INFO "Kern Path did not return\n");
+		return -EFAULT;
+	}
 	dentry = path.dentry;
 	sb = dentry->d_sb;
+	printk(KERN_INFO "checking for minix file system '%s'\n", sb->s_type->name);
+	//check that you are operating in a minix filesystem
+	
+	
+	if(strncmp("minix",sb->s_type->name, 5) != 0){
+		printk(KERN_INFO "ERROR: \n       Path not in a minix filesystem\n");
+		return -EFAULT;
+	}
 
 	// aquire inode
 	i_node = minix_iget(sb, ino);
@@ -47,7 +59,8 @@ void minix_chown( int ino,char* filepath, int uid){
 	//return the path to the VFS
 	path_put(&path);
 
-	return;
+	printk(KERN_INFO "CHOWN SUCCESS");
+	return 0;
 }
 
 /* process_inodes: 
@@ -73,10 +86,17 @@ int process_inodes(char * filepath, int uid){
 	int *p;
 
 	//extract the super block from the path dentry
-	kern_path(filepath, LOOKUP_FOLLOW, &path);
+	if (kern_path(filepath, LOOKUP_FOLLOW, &path)){
+		return -EFAULT;
+	}
 	dentry = path.dentry;
 	sb = dentry->d_sb;
-
+	
+	//check if it is a minix file system
+	if(strncmp("minix",sb->s_type->name, 5) != 0){
+		printk(KERN_INFO "ERROR: \n       Path not in a minix filesystem\n");
+		return -EFAULT;
+	}
 	//extract super block info to aquire inode bitmap
 	sbi = minix_sb(sb);
 	s_imap = sbi->s_imap;
@@ -106,7 +126,9 @@ int process_inodes(char * filepath, int uid){
 					printk(KERN_INFO "INODE %i VALID\n", curino);
 					
 					//call minix_chown on valid inode
-					minix_chown(curino, filepath, uid);
+					if (minix_chown(curino, filepath, uid) != 0){
+						return -EFAULT;
+					}
 					inodesfound ++;
 				}
 				printk(KERN_INFO "COMPARISON INT %i\n", comparisonint);
@@ -138,20 +160,20 @@ int process_inodes(char * filepath, int uid){
  */
 
 int proc_chown(int ino, char * filepath, int uid){
-
+	int res;
 		
 	if(ino > 0){
 		//change the ownership for the specified inode
-		minix_chown(ino,filepath,uid);
+		res = minix_chown(ino,filepath,uid);
 	}else if(ino == 0){
 		//change the ownership for all inodes in the VFS
-		process_inodes(filepath, uid);
+		res = process_inodes(filepath, uid);
 	}else{
 		//invalid inode number supplied.
 		return -EFAULT;
 	}
 	
-	return 0;
+	return res;
 	
 	
 

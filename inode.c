@@ -27,6 +27,8 @@ static int minix_write_inode(struct inode *inode,
 static int minix_statfs(struct dentry *dentry, struct kstatfs *buf);
 static int minix_remount (struct super_block * sb, int * flags, char * data);
 static struct proc_dir_entry *Our_Proc_File;
+DEFINE_MUTEX  (devLock);
+static int Device_Open = 0;	
 
 static void minix_evict_inode(struct inode *inode)
 {
@@ -667,10 +669,25 @@ static struct file_system_type minix_fs_type = {
 };
 MODULE_ALIAS_FS("minix");
 static int procfs_open(struct inode *inode, struct file *file){
-	return 0;
+
+	  mutex_lock (&devLock);
+    if (Device_Open) {
+	mutex_unlock (&devLock);
+	return -EBUSY;
+    }
+    Device_Open++;
+    mutex_unlock (&devLock);
+    try_module_get(THIS_MODULE);
+    return 0;
+
 }
 static int procfs_close(struct inode *inode, struct file *file){
-	return 0;
+	mutex_lock (&devLock);
+	Device_Open--;		
+	mutex_unlock (&devLock);
+
+	module_put(THIS_MODULE);
+	return 0;		
 }
 
 ssize_t procfs_write( struct file *filp, const char __user *buff, size_t count, loff_t *offset){
