@@ -5,6 +5,10 @@
 #include <linux/buffer_head.h>
 #include <linux/types.h>
 #include "minix.h"
+
+
+
+
 /* minix_chown: 
 
 sets uid-field for given inode to specified value
@@ -48,7 +52,7 @@ int process_inodes(struct super_block *sb, int uid){
 	u32 bits;
 	int *p;
 
-	printk(KERN_INFO "ENTERING PROCESSINODE");
+	printk(KERN_INFO "ENTERING PROCESSINODE ");
 	sbi = minix_sb(sb);
 	s_imap = sbi->s_imap;
 	bits = sbi->s_ninodes + 1;
@@ -58,12 +62,16 @@ int process_inodes(struct super_block *sb, int uid){
 		unsigned words = sb->s_blocksize / 2;
 		p = (int *)(*s_imap++)->b_data;
 		while (words--){
+			if(curino < 16)
+				printk(KERN_INFO "p %i \n", *p);
+
 			while (index < 16){
-				
-				if((*p & comparisonint)!= 0){
-					printk(KERN_INFO "INODE %i VALID", curino);
+				if(curino < 16)
+					printk(KERN_INFO "CHECKING INODE %i\n", curino);
+				if(curino < 16 &&(*p & comparisonint)!= 0){
+					printk(KERN_INFO "INODE %i VALID\n", curino);
 				}
-				comparisonint = comparisonint >> 1;
+				comparisonint = comparisonint *2 ;
 				
 				curino ++;
 				index++;
