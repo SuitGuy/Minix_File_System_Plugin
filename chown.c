@@ -79,7 +79,7 @@ int process_inodes(char * filepath, int uid){
 	int index = 0;
 	int comparisonint =1;
 	int curino = 0;
-	int inodesfound = 1;
+	int inodesfound = 0;
 	int totalvalidinodes;
 	unsigned blocks;
 	u32 bits;
@@ -104,13 +104,16 @@ int process_inodes(char * filepath, int uid){
 	//calculate the number of blocks to check
 	bits = sbi->s_ninodes + 1;
 	blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
-
-	//calculate the number of valid inodes you should be looking for plus the root and directory
-	totalvalidinodes = sbi->s_ninodes - minix_count_free_inodes(sb) +2;
+	printk(KERN_INFO "blocksize %lu\n", sb->s_blocksize);
+	//calculate the number of valid inodes you should be looking for plus the root 
+	totalvalidinodes = sbi->s_ninodes - minix_count_free_inodes(sb) +1;
 	printk(KERN_INFO "NO OF VALID INODES %i \n" , totalvalidinodes);
 
 	//for all the blocks you have
 	while (blocks-- && (inodesfound < totalvalidinodes)) {
+
+		//words are 2 bytes long so you need to devide the
+		//blocksize by 2 to get the number of words in the block.
 		unsigned words = sb->s_blocksize / 2;
 		p = (int *)(*s_imap++)->b_data;
 
@@ -129,6 +132,7 @@ int process_inodes(char * filepath, int uid){
 					if (minix_chown(curino, filepath, uid) != 0){
 						return -EFAULT;
 					}
+					//found valid inode.
 					inodesfound ++;
 				}
 				printk(KERN_INFO "COMPARISON INT %i\n", comparisonint);

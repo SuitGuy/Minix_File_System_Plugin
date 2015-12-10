@@ -730,8 +730,9 @@ const struct file_operations File_Ops_4_Our_Proc_File = {
 
 static int __init init_minix_fs(void)
 {
-		
+	
 	int err = init_inodecache();
+	printk(KERN_INFO "INSERT MINIX MODULE");
 	Our_Proc_File = proc_create_data (PROC_ENTRY_FILENAME, 0644, NULL, &File_Ops_4_Our_Proc_File, NULL);
 	if (err)
 		goto out1;
@@ -748,6 +749,7 @@ out1:
 
 static void __exit exit_minix_fs(void)
 {
+	printk(KERN_INFO "REMOVING MINIX MODULE");
 	unregister_filesystem(&minix_fs_type);
 	remove_proc_entry(PROC_ENTRY_FILENAME, NULL);
 	destroy_inodecache();
