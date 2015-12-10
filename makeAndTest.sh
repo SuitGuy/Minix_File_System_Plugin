@@ -6,6 +6,9 @@ mkfs.minix ./disk;
 mkdir ./minixdir;
 mount -o loop ./disk ./minixdir;
 
-touch ./minixdir/testfile.txt;
+touch ./minixdir/testfile1.txt;
+touch ./minixdir/testfile4.txt;
+touch ./minixdir/testfile3.txt;
+touch ./minixdir/testfile2.txt;
 
 

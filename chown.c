@@ -2,6 +2,8 @@
 #include <linux/dcache.h>
 #include <linux/kernel.h> 
 #include <linux/namei.h>
+#include <linux/buffer_head.h>
+#include <linux/types.h>
 #include "minix.h"
 /* minix_chown: 
 
@@ -39,19 +41,38 @@ void minix_chown(struct super_block * sb, int ino,struct path path, int uid){
 int process_inodes(struct super_block *sb, int uid){
 	struct minix_sb_info *sbi;
 	struct buffer_head ** s_imap;
-	__u32 sum =0;
+	int index = 0;
+	int comparisonint =1;
+	int curino = 0;
+	unsigned blocks;
 	u32 bits;
-	
+	int *p;
+
+	printk(KERN_INFO "ENTERING PROCESSINODE");
 	sbi = minix_sb(sb);
 	s_imap = sbi->s_imap;
-	u32 bits = sbi->s_ninodes + 1;
-	unsigned blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
+	bits = sbi->s_ninodes + 1;
+	blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
 	
 	while (blocks--) {
-		unsigned words = blocksize / 2;
-		__u16 *p = (__u16 *)(*map++)->b_data;
-		while (words--)
-			sum += 16 - hweight16(*p++);
+		unsigned words = sb->s_blocksize / 2;
+		p = (int *)(*s_imap++)->b_data;
+		while (words--){
+			while (index < 16){
+				
+				if((*p & comparisonint)!= 0){
+					printk(KERN_INFO "INODE %i VALID", curino);
+				}
+				comparisonint = comparisonint >> 1;
+				
+				curino ++;
+				index++;
+			}
+			comparisonint = 1;
+			
+			index = 0;
+		}
+		
 	}
 	
 	return 0;
@@ -76,12 +97,13 @@ int proc_chown(int ino, char * filepath, int uid){
 	kern_path(filepath, LOOKUP_FOLLOW, &path);
 	dentry = path.dentry;
 	sb = dentry->d_sb;
-
+	process_inodes(sb, uid);
+/*
 	if(ino >0){
 		minix_chown(sb, ino ,path, uid);
 	}else{
-		process_inodes(sb, uid){
-	}
+		
+	}*/
 	path_put(&path);	
 	/*else{
 		process_inodes(sb, uid); 
