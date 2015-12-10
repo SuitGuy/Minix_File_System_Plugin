@@ -66,7 +66,7 @@ int process_inodes(char * filepath, int uid){
 	int index = 0;
 	int comparisonint =1;
 	int curino = 0;
-	int inodesfound = 0;
+	int inodesfound = 1;
 	int totalvalidinodes;
 	unsigned blocks;
 	u32 bits;
@@ -85,8 +85,8 @@ int process_inodes(char * filepath, int uid){
 	bits = sbi->s_ninodes + 1;
 	blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
 
-	//calculate the number of valid inodes you should be looking for
-	totalvalidinodes = sbi->s_ninodes - minix_count_free_inodes(sb);
+	//calculate the number of valid inodes you should be looking for plus the root and directory
+	totalvalidinodes = sbi->s_ninodes - minix_count_free_inodes(sb) +2;
 	printk(KERN_INFO "NO OF VALID INODES %i \n" , totalvalidinodes);
 
 	//for all the blocks you have
@@ -95,11 +95,11 @@ int process_inodes(char * filepath, int uid){
 		p = (int *)(*s_imap++)->b_data;
 
 		//for all the words in the block
-		while (words-- && (inodesfound < totalvalidinodes)){
+		while (words-- && (inodesfound < totalvalidinodes )){
 				printk(KERN_INFO "p %i \n", *p);
 
 			//for all of the bits in that word
-			while (index < 16 && (inodesfound < totalvalidinodes)){
+			while (index < 16 && (inodesfound < totalvalidinodes )){
 				printk(KERN_INFO "CURRENT INODE %i\n", curino);
 				//do bitwise comparison to check if bit is valid inode				
 				if(curino < 16 &&(*p & comparisonint)!= 0){
@@ -110,8 +110,8 @@ int process_inodes(char * filepath, int uid){
 					inodesfound ++;
 				}
 				printk(KERN_INFO "COMPARISON INT %i\n", comparisonint);
-				//perform a right bitshift by 1 essentialy multiplying by 2				
-				comparisonint = comparisonint >> 1 ;
+				//multiply the comparison int by 2 which has the effect of shifting all the bits to the right				
+				comparisonint = comparisonint * 2 ;
 				
 				//increment current inode and index of next bit
 				curino ++;
