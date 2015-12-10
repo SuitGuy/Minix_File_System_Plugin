@@ -110,8 +110,8 @@ int process_inodes(char * filepath, int uid){
 					inodesfound ++;
 				}
 				printk(KERN_INFO "COMPARISON INT %i\n", comparisonint);
-				//multiply the comparison int by 2 which has the effect of shifting all the bits to the right				
-				comparisonint = comparisonint * 2 ;
+				//left bit shift the comparison int which has the same effect as multiplying it by 2			
+				comparisonint = comparisonint << 1;
 				
 				//increment current inode and index of next bit
 				curino ++;
