@@ -61,24 +61,21 @@ int process_inodes(struct super_block *sb, int uid){
 	blocks = DIV_ROUND_UP(bits, sb->s_blocksize * 8);
 	totalvalidinodes = sbi->s_ninodes - minix_count_free_inodes(sb);
 	printk(KERN_INFO "NO OF VALID INODES %i \n" , totalvalidinodes);
-	while (blocks--) {
+	while (blocks-- && (inodesfound > totalvalidinodes)) {
 		unsigned words = sb->s_blocksize / 2;
 		p = (int *)(*s_imap++)->b_data;
-		while (words--){
+		while (words-- && (inodesfound > totalvalidinodes)){
 			if(inodesfound > totalvalidinodes){
 					break;
 				}
 				printk(KERN_INFO "p %i \n", *p);
 
-			while (index < 16){
+			while (index < 16 && (inodesfound > totalvalidinodes)){
 				if(curino < 16 &&(*p & comparisonint)!= 0){
 					printk(KERN_INFO "INODE %i VALID\n", curino);
 					inodesfound ++;
-					if(inodesfound > totalvalidinodes){
-						break;
-					}
 				}
-				printk(KERN_INFO "COMPARISON INT %i", comparisonint);
+				printk(KERN_INFO "COMPARISON INT %i\n", comparisonint);
 				comparisonint = comparisonint *2 ;
 				
 				curino ++;
