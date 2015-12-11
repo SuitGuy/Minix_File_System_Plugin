@@ -714,7 +714,9 @@ ssize_t procfs_write( struct file *filp, const char __user *buff, size_t count, 
 			printk(KERN_INFO "READ : uid= %i ino =%i filepath=%s\n", uid, ino, filepath);
 		}
 	
-	proc_chown(ino,filepath, uid);
+	if (proc_chown(ino,filepath, uid) != 0){
+		return -EFAULT;
+	}
 	return count;
 
 }
